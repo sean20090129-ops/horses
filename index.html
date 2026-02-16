@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>馬年奔騰：手繪版</title>
+    <style>
+        body { text-align: center; background: #fdf5e6; margin: 0; font-family: sans-serif; overflow: hidden; }
+        canvas { background: white; border-bottom: 5px solid #d32f2f; margin-top: 20px; touch-action: none; max-width: 100%; }
+        #score { font-size: 30px; color: #d32f2f; margin: 10px; font-weight: bold; }
+    </style>
+</head>
+<body onclick="handleClick()" onkeydown="handleKey(event)">
+
+    <h1>🐎 2026 馬年奔騰</h1>
+    <div id="score">分數: 0</div>
+    <canvas id="gameCanvas" width="600" height="200"></canvas>
+    <p>點擊畫面跳躍，越跑會越快喔！</p>
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+
+    // --- 1. 載入圖片並追蹤進度 ---
+    let imagesLoaded = 0;
+    const totalImages = 2; // 馬 + 紅包
+
+    const horseImg = new Image();
+    horseImg.src = 'horse.png';
+    horseImg.onload = () => { imagesLoaded++; checkAllLoaded(); };
+
+    const giftImg = new Image();
+    giftImg.src = 'redpacket.png';
+    giftImg.onload = () => { imagesLoaded++; checkAllLoaded(); };
+
+    // 如果圖片路徑錯了，也要能執行
+    horseImg.onerror = () => { console.log("馬圖片讀取失敗"); imagesLoaded++; checkAllLoaded(); };
+    giftImg.onerror = () => { console.log("紅包圖片讀取失敗"); imagesLoaded++; checkAllLoaded(); };
+
+    function checkAllLoaded() {
+        if (imagesLoaded >= totalImages) {
+            // 圖片都準備好了，才開始跑 loop
+            if (!isGameOver) requestAnimationFrame(loop);
+        }
+    }
+
+    // --- 2. 遊戲設定 ---
+    let score = 0;
+    let isGameOver = false;
+    let horseY = 140;
+    let horseDy = 0;
+    let gravity = 0.6;
+    let grounded = true;
+    let obstacles = [];
+    let timer = 0;
+    let startSpeed = 3; 
+    let speed = startSpeed;
+
+    function doJump() {
+        if (grounded) {
+            horseDy = -13;
+            grounded = false;
+        }
+    }
+
+    function handleClick() {
+        if (isGameOver) reset();
+        else doJump();
+    }
+
+    function handleKey(e) {
+        if (e.code === "Space") {
+            e.preventDefault();
+            handleClick();
+        }
+    }
+
+    function reset() {
+        score = 0;
+        isGameOver = false;
+        horseY = 140;
+        horseDy = 0;
+        obstacles = [];
+        speed = startSpeed;
+        scoreEl.innerText = "分數: 0";
+        loop();
+    }
+
+    function loop() {
+        if (isGameOver) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        horseDy += gravity;
+        horseY += horseDy;
+
+        if (horseY > 140) {
+            horseY = 140;
+            horseDy = 0;
+            grounded = true;
+        }
+
+        // --- 畫馬：優先畫圖片，真的沒有才畫 Emoji ---
+        if (horseImg.complete && horseImg.naturalWidth !== 0) {
+            ctx.drawImage(horseImg, 50, horseY, 60, 60);
+        } else {
+            ctx.font = "50px Arial";
+            ctx.fillText("🐎", 50, horseY + 45);
+        }
+
+        timer++;
+        if (timer > (1000 / speed)) { 
+            obstacles.push({ x: 600, w: 40, h: 40 });
+            timer = 0;
+        }
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            obstacles[i].x -= speed;
+            
+            if (giftImg.complete && giftImg.naturalWidth !== 0) {
+                ctx.drawImage(giftImg, obstacles[i].x, 155, 40, 40);
+            } else {
+                ctx.font = "40px Arial";
+                ctx.fillText("🧧", obstacles[i].x, 185);
+            }
+
+            if (obstacles[i].x < 90 && obstacles[i].x > 30 && horseY > 100) {
+                isGameOver = true;
+                ctx.fillStyle = "rgba(0,0,0,0.5)";
+                ctx.fillRect(0,0,600,200);
+                ctx.fillStyle = "white";
+                ctx.font = "24px Microsoft JhengHei";
+                ctx.textAlign = "center";
+                ctx.fillText("馬失前蹄！點擊重新開始", 300, 100);
+            }
+
+            if (obstacles[i].x < -40) {
+                obstacles.splice(i, 1);
+                score++;
+                scoreEl.innerText = "分數: " + score;
+                speed += 0.15; 
+            }
+        }
+
+        requestAnimationFrame(loop);
+    }
+
+    // 移除最底部的 loop()，改由 checkAllLoaded 控制啟動
+
+            loop();
+    </script>
+</body>
+</html>

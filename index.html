@@ -24,7 +24,8 @@
     // --- 1. 載入圖片並追蹤進度 ---
     let imagesLoaded = 0;
     const totalImages = 2; // 馬 + 紅包
-
+    let isLooping = false; // 【新增】保險鎖，防止重複啟動
+    
     const horseImg = new Image();
     horseImg.src = '螢幕擷取畫面 2026-02-17 032626';
     horseImg.onload = () => { imagesLoaded++; checkAllLoaded(); };
@@ -152,3 +153,4 @@
 </body>
 
 </html>
+
